@@ -8,6 +8,7 @@
 #define LOG_CATEGORY LOGC_EFI
 
 #include <efi_loader.h>
+#include <bloblist.h>
 #include <log.h>
 #include <mapmem.h>
 #include <acpi/acpi_table.h>
@@ -28,14 +29,21 @@ efi_status_t efi_acpi_register(void)
 	efi_status_t ret;
 
 	/*
-	 * The bloblist is already marked reserved. For now, we don't bother
-	 * marking it with EFI_ACPI_RECLAIM_MEMORY since we would need to cut a
-	 * hole in the EFI_BOOT_SERVICES_CODE region added by
-	 * add_u_boot_and_runtime(). At some point that function could create a
-	 * more detailed map.
+	 * Reserve the complete bloblist, which can also contain non-ACPI data.
+	 * Publishing RSDP alone is insufficient: the OS must not reclaim its
+	 * backing memory when boot services end.
 	 */
-	if (IS_ENABLED(CONFIG_BLOBLIST_TABLES))
-		return EFI_SUCCESS;
+	if (IS_ENABLED(CONFIG_BLOBLIST_TABLES)) {
+		/* BSP's EFI map does not reserve the relocated bloblist. */
+		start = ALIGN_DOWN(bloblist_get_base(), EFI_PAGE_MASK);
+		end = ALIGN(bloblist_get_base() + bloblist_get_total_size(),
+			    EFI_PAGE_MASK);
+		ret = efi_add_memory_map(start, end - start,
+					 EFI_RESERVED_MEMORY_TYPE);
+		if (ret != EFI_SUCCESS)
+			return ret;
+		goto install_table;
+	}
 
 	/* Mark space used for tables */
 	start = ALIGN_DOWN(gd->arch.table_start, EFI_PAGE_MASK);
@@ -52,6 +60,8 @@ efi_status_t efi_acpi_register(void)
 			return ret;
 	}
 
+install_table:
+	/* Reserved bloblist memory must still be published to the OS. */
 	addr = gd_acpi_start();
 	log_debug("EFI using ACPI tables at %lx\n", addr);
 
