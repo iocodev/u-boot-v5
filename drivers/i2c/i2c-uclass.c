@@ -808,7 +808,7 @@ UCLASS_DRIVER(i2c_generic) = {
 
 static const struct udevice_id generic_chip_i2c_ids[] = {
 	{ .compatible = "i2c-chip", .data = I2C_DEVICE_GENERIC },
-#if CONFIG_IS_ENABLED(ACPIGEN)
+#if CONFIG_IS_ENABLED(ACPIGEN) && (defined(CONFIG_X86) || defined(CONFIG_SANDBOX))
 	{ .compatible = "hid-over-i2c", .data = I2C_DEVICE_HID_OVER_I2C },
 #endif
 	{ }
@@ -818,9 +818,11 @@ U_BOOT_DRIVER(i2c_generic_chip_drv) = {
 	.name		= "i2c_generic_chip_drv",
 	.id		= UCLASS_I2C_GENERIC,
 	.of_match	= generic_chip_i2c_ids,
-#if CONFIG_IS_ENABLED(ACPIGEN)
+#if CONFIG_IS_ENABLED(ACPIGEN) && (defined(CONFIG_X86) || defined(CONFIG_SANDBOX))
 	.of_to_plat	= acpi_i2c_of_to_plat,
 	.priv_auto	= sizeof(struct acpi_i2c_priv),
 #endif
+#if defined(CONFIG_X86) || defined(CONFIG_SANDBOX)
 	ACPI_OPS_PTR(&acpi_i2c_ops)
+#endif
 };

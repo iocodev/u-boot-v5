@@ -4,7 +4,9 @@
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 obj-$(CONFIG_$(XPL_)DM_I2C) += i2c-uclass.o
 ifdef CONFIG_$(XPL_)ACPIGEN
+ifeq ($(CONFIG_X86)$(CONFIG_SANDBOX),y)
 obj-$(CONFIG_$(XPL_)DM_I2C) += acpi_i2c.o
+endif
 endif
 obj-$(CONFIG_$(XPL_)DM_I2C_GPIO) += i2c-gpio.o
 obj-$(CONFIG_$(XPL_)I2C_CROS_EC_TUNNEL) += cros_ec_tunnel.o
