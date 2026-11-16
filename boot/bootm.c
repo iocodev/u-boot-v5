@@ -733,7 +733,9 @@ ulong bootm_disable_interrupts(void)
 	 * Do not go further if usb is boot device,
 	 * We may access usb at late sequence.
 	 */
-	if (!strcmp(env_get("devtype"), "usb"))
+	const char *devtype = env_get("devtype");
+
+	if (devtype && !strcmp(devtype, "usb"))
 		return 0;
 
 	/*
